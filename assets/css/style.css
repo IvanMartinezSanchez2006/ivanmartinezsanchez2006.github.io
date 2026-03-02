@@ -1,0 +1,294 @@
+:root {
+    --bg-color: #000000;
+    --wall-color: #1919A6;
+
+    --wall-glow: #2121DE;
+
+    --pac-yellow: #FFFF00;
+    --text-white: #DEDEDE;
+
+    --ghost-scared: #2121DE;
+
+
+
+    --font-arcade: 'Press Start 2P', cursive;
+
+    --font-terminal: 'VT323', monospace;
+
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-white);
+    font-family: var(--font-terminal);
+    font-size: 1.2rem;
+
+    line-height: 1.4;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-arcade);
+    color: var(--pac-yellow);
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0px #b8860b;
+
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+h1 {
+    font-size: 1.5rem;
+}
+
+h2 {
+    font-size: 1.2rem;
+}
+
+h3 {
+    font-size: 1rem;
+    color: #fff;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+
+/* Tabla principal con efecto de neón y borde doble */
+.arcade-container {
+    max-width: 1000px;
+    width: 95%;
+    margin: 2rem auto;
+    border: 4px double var(--wall-color);
+    border-radius: 15px;
+    box-shadow:
+        0 0 10px var(--wall-glow),
+        inset 0 0 10px var(--wall-glow);
+    padding: 2rem;
+    position: relative;
+    background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
+}
+
+
+/* Cabecera del sitio con separador visual */
+header.game-header {
+    text-align: center;
+    border-bottom: 2px solid var(--wall-color);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Navegación principal: Menú con puntos de Pac-Man */
+nav ul {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+}
+
+nav a {
+    font-family: var(--font-arcade);
+    font-size: 0.8rem;
+    color: var(--text-white);
+    position: relative;
+    padding-left: 1.5rem;
+    transition: color 0.2s;
+}
+
+
+nav a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background-color: #ffb897;
+
+    border-radius: 50%;
+}
+
+nav a:hover,
+nav a.active {
+    color: var(--pac-yellow);
+    text-shadow: 0 0 5px var(--pac-yellow);
+}
+
+nav a:hover::before,
+nav a.active::before {
+    width: 14px;
+    height: 14px;
+    background-color: var(--pac-yellow);
+    box-shadow: 0 0 8px var(--pac-yellow);
+    animation: blink 0.5s infinite alternate;
+}
+
+/* Animación de parpadeo para los elementos interactivos */
+@keyframes blink {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.5;
+    }
+}
+
+.pacman-loader {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 0 auto 2rem;
+    background: conic-gradient(var(--pac-yellow) 30deg,
+            transparent 0 330deg,
+            var(--pac-yellow) 0);
+    animation: waka 0.6s infinite linear;
+}
+
+@keyframes waka {
+
+    0%,
+    100% {
+        background: conic-gradient(var(--pac-yellow) 30deg,
+                transparent 0 330deg,
+                var(--pac-yellow) 0);
+    }
+
+    50% {
+        background: conic-gradient(var(--pac-yellow) 0deg,
+                transparent 0 360deg,
+                var(--pac-yellow) 0);
+    }
+}
+
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+
+.game-card {
+    border: 2px solid var(--wall-color);
+    padding: 1.5rem;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-card:hover {
+    box-shadow: 0 0 15px var(--ghost-scared);
+    border-color: var(--ghost-scared);
+    transform: translateY(-2px);
+}
+
+.team-photo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 1.5rem;
+    border: 3px solid var(--wall-color);
+    box-shadow: 0 0 10px var(--wall-glow);
+    image-rendering: pixelated;
+
+}
+
+.game-card h3::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    vertical-align: middle;
+    position: relative;
+    top: -2px;
+
+    background: var(--pac-yellow);
+    border-radius: 50%;
+
+    background: conic-gradient(transparent 35deg,
+            var(--pac-yellow) 35deg 325deg,
+            transparent 325deg);
+    transform: rotate(90deg);
+}
+
+
+
+
+/* Listas con viñetas pixeladas personalizadas */
+ul.pixel-list li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+ul.pixel-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 6px;
+    height: 6px;
+    background-color: #ffb897;
+
+    border-radius: 2px;
+
+}
+
+
+footer {
+    text-align: center;
+    margin-top: auto;
+    padding: 2rem;
+    font-family: var(--font-arcade);
+    font-size: 0.6rem;
+    color: #555;
+    text-transform: uppercase;
+}
+
+
+.text-center {
+    text-align: center;
+}
+
+.neon-text {
+    color: var(--pac-yellow);
+}
+
+.blink {
+    animation: blink 1s infinite;
+}
+
+
+/* Moviles (no me influye para el pc)*/
+@media (max-width: 600px) {
+    .arcade-container {
+        border-width: 2px;
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.1rem;
+    }
+
+    nav ul {
+        gap: 1rem;
+    }
+
+    nav a {
+        font-size: 0.6rem;
+    }
+}

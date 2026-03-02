@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BONUS STAGE: PAC-MAN JS (HARD MODE)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #000;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            border: 4px double #1919A6;
+            box-shadow: 0 0 20px #1919A6;
+            padding: 10px;
+        }
+
+        canvas {
+            background-color: #000;
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #FF0000;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 12px;
+            border: 2px solid white;
+            cursor: pointer;
+            z-index: 100;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .btn-back:hover {
+            background: white;
+            color: #FF0000;
+        }
+
+        #game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border: 4px solid #FFFF00;
+            z-index: 200;
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="index.html" class="btn-back">🔙 VOLVER AL CV</a>
+
+    <div id="game-container">
+        <div id="ui-layer">
+            <div id="score">SCORE: 0</div>
+            <div id="high-score">HIGH: 1000</div>
+        </div>
+        <canvas id="gameCanvas" width="440" height="440"></canvas>
+
+        <div id="game-over-screen">
+            <h1 id="status-msg" style="color: #FFFF00; font-size: 24px;">GAME OVER</h1>
+            <p id="final-score" style="margin: 20px 0; color: #fff;"></p>
+            <p style="font-size: 10px; color: #ccc;" class="blink">PRESS SPACE TO RESTART</p>
+        </div>
+    </div>
+
+    <script>
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const TILE_SIZE = 20;
+        const COLS = 22;
+        const ROWS = 22;
+
+
+        const COLOR_WALL = '#1919A6';
+        const COLOR_PACMAN = '#FFFF00';
+        const COLOR_DOT = '#FFB897';
+
+
+        const GHOSTS_CONFIG = [
+            { name: 'BLINKY', color: '#FF0000', startX: 10, startY: 8, type: 'chaser' },
+            { name: 'PINKY', color: '#FFB8FF', startX: 11, startY: 8, type: 'ambush' },
+            { name: 'INKY', color: '#00FFFF', startX: 9, startY: 9, type: 'random' },
+            { name: 'CLYDE', color: '#FFB852', startX: 12, startY: 9, type: 'coward' }
+        ];
+
+
+        const map = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 1, 1, 1, 1, 1],
+
+            [1, 2, 2, 2, 2, 0, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 0, 2, 2, 2, 2, 1],
+            [1, 1, 1, 1, 1, 0, 1, 2, 1, 2, 2, 2, 2, 1, 2, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 0, 1, 2, 1, 2, 2, 2, 2, 1, 2, 1, 0, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1],
+            [1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        const initialMap = JSON.parse(JSON.stringify(map));
+
+
+        let score = 0;
+        let gameOver = false;
+        let victory = false;
+        let animationId;
+        const totalDots = map.flat().filter(tile => tile === 0).length;
+        let collectedDots = 0;
+
+
+        let mouthOpen = 0.2;
+        let mouthSpeed = 0.1;
+        let mouthDir = 1;
+
+        const pacman = {
+            x: 10,
+            y: 16,
+            dir: { x: 0, y: 0 },
+            nextDir: { x: 0, y: 0 },
+            angle: 0
+        };
+
+
+        class Ghost {
+            constructor(config) {
+                this.startX = config.startX;
+                this.startY = config.startY;
+                this.x = config.startX;
+                this.y = config.startY;
+                this.color = config.color;
+                this.type = config.type;
+                this.dir = { x: 0, y: 0 };
+                this.speed = 0.15;
+                this.moveTimer = 0;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.dir = { x: 0, y: 0 };
+            }
+
+            draw() {
+                const px = this.x * TILE_SIZE + TILE_SIZE / 2;
+                const py = this.y * TILE_SIZE + TILE_SIZE / 2;
+
+
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(px, py - 2, TILE_SIZE / 2 - 2, Math.PI, 0);
+                ctx.lineTo(px + TILE_SIZE / 2 - 2, py + TILE_SIZE / 2 - 2);
+
+
+                for (let i = 1; i <= 3; i++) {
+                    ctx.lineTo(px + TILE_SIZE / 2 - 2 - (i * ((TILE_SIZE - 4) / 3)), py + (i % 2 === 0 ? TILE_SIZE / 2 - 2 : TILE_SIZE / 2));
+                }
+                ctx.lineTo(px - TILE_SIZE / 2 + 2, py + TILE_SIZE / 2 - 2);
+                ctx.fill();
+                ctx.closePath();
+
+
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(px - 4, py - 6, 3, 0, Math.PI * 2);
+                ctx.arc(px + 4, py - 6, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                const pupilX = this.dir.x * 2;
+                const pupilY = this.dir.y * 2;
+                ctx.arc(px - 4 + pupilX, py - 6 + pupilY, 1.5, 0, Math.PI * 2);
+                ctx.arc(px + 4 + pupilX, py - 6 + pupilY, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+
+            move() {
+                this.moveTimer++;
+                if (this.moveTimer < 10) return;
+                this.moveTimer = 0;
+
+                const directions = [
+                    { x: 0, y: -1 },
+                    { x: 0, y: 1 },
+                    { x: -1, y: 0 },
+                    { x: 1, y: 0 }
+                ];
+
+
+                let validMoves = directions.filter(d => {
+                    const nextX = this.x + d.x;
+                    const nextY = this.y + d.y;
+                    if (this.dir.x !== 0 && d.x === -this.dir.x) return false;
+                    if (this.dir.y !== 0 && d.y === -this.dir.y) return false;
+
+                    return map[nextY] && map[nextY][nextX] !== 1;
+                });
+
+                if (validMoves.length === 0) {
+                    validMoves = directions.filter(d => {
+                        const nextX = this.x + d.x;
+                        const nextY = this.y + d.y;
+                        return map[nextY] && map[nextY][nextX] !== 1;
+                    });
+                }
+
+                if (validMoves.length === 0) return;
+
+
+                let targetX = pacman.x;
+                let targetY = pacman.y;
+
+                if (this.type === 'chaser') {
+                } else if (this.type === 'ambush') {
+                    targetX = pacman.x + (pacman.dir.x * 4);
+                    targetY = pacman.y + (pacman.dir.y * 4);
+                } else if (this.type === 'coward') {
+                    const dist = Math.abs(this.x - pacman.x) + Math.abs(this.y - pacman.y);
+                    if (dist < 8) {
+                        targetX = 1;
+                        targetY = 19;
+                    }
+                } else if (this.type === 'random') {
+                    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    this.dir = randomMove;
+                    this.x += randomMove.x;
+                    this.y += randomMove.y;
+                    return;
+                }
+
+
+                let bestMove = validMoves[0];
+                let minDist = Infinity;
+
+                for (let move of validMoves) {
+                    const nextX = this.x + move.x;
+                    const nextY = this.y + move.y;
+                    const dist = Math.abs(nextX - targetX) + Math.abs(nextY - targetY);
+
+                    if (dist < minDist) {
+                        minDist = dist;
+                        bestMove = move;
+                        bestMove = move;
+                    }
+                }
+
+                this.dir = bestMove;
+                this.x += bestMove.x;
+                this.y += bestMove.y;
+            }
+        }
+
+        const ghosts = GHOSTS_CONFIG.map(cfg => new Ghost(cfg));
+
+
+        document.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                e.preventDefault();
+            }
+
+            if (gameOver || victory) {
+                if (e.code === 'Space') resetGame();
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowUp': pacman.nextDir = { x: 0, y: -1 }; break;
+                case 'ArrowDown': pacman.nextDir = { x: 0, y: 1 }; break;
+                case 'ArrowLeft': pacman.nextDir = { x: -1, y: 0 }; break;
+                case 'ArrowRight': pacman.nextDir = { x: 1, y: 0 }; break;
+            }
+        });
+
+        function resetGame() {
+            pacman.x = 10;
+            pacman.y = 16;
+            pacman.dir = { x: 0, y: 0 };
+            pacman.nextDir = { x: 0, y: 0 };
+            score = 0;
+            collectedDots = 0;
+            gameOver = false;
+            victory = false;
+            document.getElementById('score').innerText = `SCORE: 0`;
+            document.getElementById('game-over-screen').style.display = 'none';
+
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    map[y][x] = initialMap[y][x];
+                }
+            }
+
+
+            ghosts.forEach(g => g.reset());
+
+            loop();
+        }
+
+
+        function update() {
+            if (gameOver || victory) return;
+
+
+            let nextX = pacman.x + pacman.nextDir.x;
+            let nextY = pacman.y + pacman.nextDir.y;
+            if (map[nextY] && map[nextY][nextX] !== 1) {
+                pacman.dir = pacman.nextDir;
+            }
+            nextX = pacman.x + pacman.dir.x;
+            nextY = pacman.y + pacman.dir.y;
+            if (map[nextY] && map[nextY][nextX] !== 1) {
+                pacman.x = nextX;
+                pacman.y = nextY;
+
+                if (pacman.dir.x === 1) pacman.angle = 0;
+                if (pacman.dir.x === -1) pacman.angle = Math.PI;
+                if (pacman.dir.y === -1) pacman.angle = -Math.PI / 2;
+                if (pacman.dir.y === 1) pacman.angle = Math.PI / 2;
+            }
+
+
+            if (map[pacman.y][pacman.x] === 0) {
+                map[pacman.y][pacman.x] = 2;
+                score += 10;
+                collectedDots++;
+                document.getElementById('score').innerText = `SCORE: ${score}`;
+                if (collectedDots >= totalDots) {
+                    victory = true;
+                    endGame("VICTORY! - YOU WON");
+                }
+            }
+
+
+            ghosts.forEach(ghost => {
+                ghost.move();
+                if (ghost.x === pacman.x && ghost.y === pacman.y) {
+                    gameOver = true;
+                    endGame("GAME OVER - CAUGHT BY " + ghost.type.toUpperCase());
+                }
+            });
+
+
+            mouthOpen += mouthSpeed * mouthDir;
+            if (mouthOpen > 0.25 || mouthOpen < 0) mouthDir *= -1;
+        }
+
+        function endGame(msg) {
+            document.getElementById('status-msg').innerText = msg;
+            document.getElementById('final-score').innerText = `FINAL SCORE: ${score}`;
+            document.getElementById('status-msg').style.color = victory ? '#00FF00' : '#FF0000';
+            document.getElementById('game-over-screen').style.display = 'block';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const tile = map[y][x];
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+
+                    if (tile === 1) {
+                        ctx.fillStyle = COLOR_WALL;
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = '#2121DE';
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.shadowBlur = 0;
+                        ctx.clearRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                        ctx.fillRect(px + 6, py + 6, TILE_SIZE - 12, TILE_SIZE - 12);
+                    } else if (tile === 0) {
+                        ctx.fillStyle = COLOR_DOT;
+                        ctx.beginPath();
+                        ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+
+            const px = pacman.x * TILE_SIZE + TILE_SIZE / 2;
+            const py = pacman.y * TILE_SIZE + TILE_SIZE / 2;
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(pacman.angle);
+            ctx.fillStyle = COLOR_PACMAN;
+            ctx.beginPath();
+            ctx.arc(0, 0, TILE_SIZE / 2 - 2, mouthOpen * Math.PI, (2 - mouthOpen) * Math.PI);
+            ctx.lineTo(0, 0);
+            ctx.fill();
+            ctx.restore();
+
+
+            ghosts.forEach(ghost => ghost.draw());
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const elapsed = timestamp - lastTime;
+            if (elapsed > 100) {
+                update();
+                lastTime = timestamp;
+            }
+            draw();
+            if (!gameOver && !victory) requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+
+</html>

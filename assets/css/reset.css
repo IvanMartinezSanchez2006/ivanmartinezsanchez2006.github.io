@@ -1,0 +1,55 @@
+/* Reseteo general de márgenes, padding y box-sizing para consistencia en navegadores */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ajustes globales del cuerpo para mejorar la legibilidad y renderizado */
+body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Asegura que los elementos multimedia sean responsivos y no excedan el contenedor */
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+/* Hereda fuentes en elementos de formulario para consistencia visual */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+}
+
+/* Evita desbordamiento de texto largo en contenedores */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    overflow-wrap: break-word;
+}
+
+/* Elimina viñetas por defecto de las listas */
+ul,
+ol {
+    list-style: none;
+}
+
+/* Estilos básicos para enlaces: sin subrayado y hereda color */
+a {
+    text-decoration: none;
+    color: inherit;
+}
