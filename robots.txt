@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /mi-web-personal/  
 
 Sitemap: https://ivanmartinezsanchez2006.github.io/sitemap.xml
